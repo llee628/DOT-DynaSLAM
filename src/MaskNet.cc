@@ -82,6 +82,7 @@ cv::Mat SegmentDynObject::GetSegmentation(cv::Mat &image,std::string dir, std::s
 
 void SegmentDynObject::ImportSettings(){
     std::string strSettingsFile = "./Examples/RGB-D/MaskSettings.yaml";
+    std::cout<<strSettingsFile.c_str()<<std::endl;
     cv::FileStorage fs(strSettingsFile.c_str(), cv::FileStorage::READ);
     fs["py_path"] >> this->py_path;
     fs["module_name"] >> this->module_name;
