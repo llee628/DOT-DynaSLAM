@@ -4,9 +4,10 @@
 #include <opencv2/core.hpp>
 #include <fstream>
 #include "yolo.h"
-#include "opticalFlow.h"
 #include <vector>
 #include <math.h> 
+#include <stdio.h>
+#include <opencv2/opencv.hpp>
 
 using namespace cv;
 using namespace dnn;
@@ -148,29 +149,60 @@ namespace yolov3 {
         return names;
     }
 
-    vector<vector<float>> yolov3Segment::opticalFlowDetect(cv::Mat& img1, cv::Mat& img2){
-        vector<Point2f> points;
+    vector<vector<float>> yolov3Segment::opticalFlowDetect(cv::Mat& old_frame, cv::Mat& frame){
+        vector<Point2f> p0, p1;
 
-
-
-
-
-
+        Mat old_gray, frame_gray;
+        cvtColor(old_frame, old_gray, COLOR_BGR2GRAY);
+        goodFeaturesToTrack(old_gray, p0, 0, 0.3, 7, Mat(), 7, false, 0.04);
         
+        Mat mask = Mat::zeros(old_frame.size(), old_frame.type());
+        cvtColor(frame, frame_gray, COLOR_BGR2GRAY);
 
-        // store position of moving features
-        vector<vector<float>> mvpts;
+        // calculate optical flow
+        vector<uchar> status;
+        vector<float> err;
+        TermCriteria criteria = TermCriteria((TermCriteria::COUNT) + (TermCriteria::EPS), 10, 0.03);
+        if(p0.size() < 30 || true)
+        {   
+            cout << "FEW POINTS\n";
+            goodFeaturesToTrack(old_gray, p0, 0, 0.3, 7, Mat(), 7, false, 0.04);
+
+        }
+
+        calcOpticalFlowPyrLK(old_gray, frame_gray, p0, p1, status, err, Size(15,15), 2, criteria);
+        
+        vector<Point2f> good_new;
+        vector<vector<float>> mvpts; // used to store position of moving features
         int distance[p0.size()];
-        for( unsigned int i = 0; i < p0.size(); i++){
-            distance[i] = sqrt( (p0[i].x - p0[i].y) + (p1[i].x - p1[i].y) );
-            if(distance[i] > 3){ // moving
-                mvpts[0][i] = p0[i].x;
-                mvpts[1][i] = p0[i].y;
-            }else{
-                mvpts[0][i] = -1;
-                mvpts[1][i] = -1;
+        for(uint i = 0; i < p0.size(); i++)
+        {
+            // Select good points
+            if(status[i] == 1) {
+                good_new.push_back(p1[i]);
+                // draw the tracks
+                // line(mask,p1[i], p0[i], colors[i], 2);
+                // circle(frame, p1[i], 5, colors[i], -1);
+
+                distance[i] = sqrt( (p0[i].x - p0[i].y) + (p1[i].x - p1[i].y) );
+                // set threshold to 3 (maybe need to tune)
+                if(distance[i] > 3){ // moving
+                    mvpts[0][i] = p1[i].x;
+                    mvpts[1][i] = p1[i].y;
+                }else{
+                    mvpts[0][i] = -1;
+                    mvpts[1][i] = -1;
+                }
             }
         }
+
+        // Mat img;
+        // add(frame, mask, img);
+
+        // // Now update the previous frame and previous points
+        // old_gray = frame_gray.clone();
+        // p0 = good_new;
+
         return mvpts; 
     }
 
