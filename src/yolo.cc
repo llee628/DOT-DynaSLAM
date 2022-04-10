@@ -99,7 +99,7 @@ namespace yolov3 {
         NMSBoxes(boxes, confidences, this->confThreshold, this->nmsThreshold, indices);
 
         // detection Dynamic optical points
-        vector<float> DynamicPts;
+        vector<vector<int>> DynamicPts;
         DynamicPts = opticalFlowDetect(frame, frame2);
 
         for (size_t i = 0; i < indices.size(); ++i)
