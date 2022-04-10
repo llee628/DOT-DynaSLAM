@@ -6,6 +6,7 @@ lib/
 build/
 
 Examples/Monocular/mono_tum
+Examples/Monocular/mono_tum_yolo
 Examples/Monocular/mono_kitti
 Examples/Monocular/mono_carla
 
