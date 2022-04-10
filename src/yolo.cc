@@ -113,16 +113,17 @@ namespace yolov3 {
                 int count = 0;
                 int com_num = sizeof(DynamicPts[0])/sizeof(DynamicPts[0][0]);
                 for(int im = 0; i< com_num; im++){
-                    if ((DynamicPts[0][im] > max(0, box.x)) && (DynamicPts[0][im] < box.x+ box.width)) && (DynamicPts[1][im] > max(0, box.y)) && (DynamicPts[1][im] < box.y+ box.height))){
+                    if ( (DynamicPts[0][im] > max(0, box.x)) && ((DynamicPts[0][im] < box.x+ box.width)) && (DynamicPts[1][im] > max(0, box.y)) && ((DynamicPts[1][im] < box.y+ box.height)) )
+                    {
                         count++;
-                    }else{
-                        continue;
-                    }
-                    if (count > 6){
-                        for (int x = max(0, box.x); x < box.x + box.width && x < 640; ++x)
-                            for (int y = max(0, box.y); y < box.y + box.height && y < 480; ++y)
-                                mask.at<uchar>(y, x) = 1;
-                    }
+                        if (count > 6){
+                            for (int x = max(0, box.x); x < box.x + box.width && x < 640; ++x)
+                                for (int y = max(0, box.y); y < box.y + box.height && y < 480; ++y)
+                                    mask.at<uchar>(y, x) = 1;
+                        }
+                    } //else{
+                       // continue;
+                   // }
                 }   
             }
         }
@@ -149,7 +150,7 @@ namespace yolov3 {
         return names;
     }
 
-    vector<vector<float>> yolov3Segment::opticalFlowDetect(cv::Mat& old_frame, cv::Mat& frame){
+    vector<vector<int>> yolov3Segment::opticalFlowDetect(cv::Mat& old_frame, cv::Mat& frame){
         vector<Point2f> p0, p1;
 
         Mat old_gray, frame_gray;
@@ -173,7 +174,7 @@ namespace yolov3 {
         calcOpticalFlowPyrLK(old_gray, frame_gray, p0, p1, status, err, Size(15,15), 2, criteria);
         
         vector<Point2f> good_new;
-        vector<vector<float>> mvpts; // used to store position of moving features
+        vector<vector<int>> mvpts; // used to store position of moving features
         int distance[p0.size()];
         for(uint i = 0; i < p0.size(); i++)
         {
@@ -187,8 +188,8 @@ namespace yolov3 {
                 distance[i] = sqrt( (p0[i].x - p0[i].y) + (p1[i].x - p1[i].y) );
                 // set threshold to 3 (maybe need to tune)
                 if(distance[i] > 3){ // moving
-                    mvpts[0][i] = p1[i].x;
-                    mvpts[1][i] = p1[i].y;
+                    mvpts[0][i] = std::round(p1[i].x);
+                    mvpts[1][i] = std::round(p1[i].y);
                 }else{
                     mvpts[0][i] = -1;
                     mvpts[1][i] = -1;
