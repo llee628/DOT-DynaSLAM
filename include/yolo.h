@@ -33,7 +33,7 @@ namespace yolov3 {
             yolov3Segment();
             ~yolov3Segment();
             cv::Mat Segmentation(cv::Mat &image, cv::Mat &image2);
-            vector<vector<float>> opticalFlowDetect(cv::Mat& img1, cv::Mat& img2);
+            vector<vector<int>> opticalFlowDetect(cv::Mat& img1, cv::Mat& img2);
 
             // Remove the bounding boxes with low confidence using non-maxima suppression
             cv::Mat postprocess(Mat& frame,Mat& frame2, const vector<Mat>& out);
