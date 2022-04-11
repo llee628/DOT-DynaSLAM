@@ -49,9 +49,9 @@ int main(int argc, char **argv)
         //cout << "Loading Mask R-CNN. This could take a while..." << endl;
         //MaskNet = new DynaSLAM::SegmentDynObject();
         //cout << "Mask R-CNN loaded!" << endl;
-        cout << "Loading Yolov3 net. This could take a while..." << endl;
+        cout << "Loading Yolov4 net. This could take a while..." << endl;
         yolo = new yolov3::yolov3Segment();
-        cout << "Yolov3 net loaded!" << endl;
+        cout << "Yolov4 net loaded!" << endl;
     }
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
@@ -66,7 +66,7 @@ int main(int argc, char **argv)
     cout << "Images in the sequence: " << nImages << endl << endl;
 
     // Main loop
-    cv::Mat im1, im2;
+    cv::Mat im, im2;
 
     // Dilation settings
     int dilation_size = 15;
@@ -77,18 +77,11 @@ int main(int argc, char **argv)
     for(int ni=1; ni<nImages; ni++)
     {
         // Read image from file
-        im1 = cv::imread(string(argv[3])+"/"+vstrImageFilenames[ni-1],CV_LOAD_IMAGE_UNCHANGED);
-        im2 = cv::imread(string(argv[3])+"/"+vstrImageFilenames[ni],CV_LOAD_IMAGE_UNCHANGED);
+        im = cv::imread(string(argv[3])+"/"+vstrImageFilenames[ni],CV_LOAD_IMAGE_UNCHANGED);
+        im2 = cv::imread(string(argv[3])+"/"+vstrImageFilenames[ni-1],CV_LOAD_IMAGE_UNCHANGED);
         double tframe = vTimestamps[ni];
 
-        if(im1.empty())
-        {
-            cerr << endl << "Failed to load image at: "
-                 << string(argv[3]) << "/" << vstrImageFilenames[ni-1] << endl;
-            return 1;
-        }
-
-        if(im2.empty())
+        if(im.empty())
         {
             cerr << endl << "Failed to load image at: "
                  << string(argv[3]) << "/" << vstrImageFilenames[ni] << endl;
@@ -107,7 +100,7 @@ int main(int argc, char **argv)
         if(argc == 5)
         {
             cv::Mat maskRCNN;
-            maskRCNN = MaskNet->GetSegmentation(im1,string(argv[4]),vstrImageFilenames[ni].replace(0,4,"")); //0 background y 1 foreground
+            maskRCNN = MaskNet->GetSegmentation(im,string(argv[4]),vstrImageFilenames[ni].replace(0,4,"")); //0 background y 1 foreground
             cv::Mat maskRCNNdil = maskRCNN.clone();
             cv::dilate(maskRCNN,maskRCNNdil, kernel);
             mask = mask - maskRCNNdil;
@@ -115,9 +108,9 @@ int main(int argc, char **argv)
         */
         cv::Mat mask = cv::Mat::ones(480,640,CV_8U);
         if (argc == 5)
-            mask = yolo->Segmentation(im1, im2);
+            mask = yolo->Segmentation(im, im2);
         // Pass the image to the SLAM system
-        SLAM.TrackMonocular(im2, mask, tframe);
+        SLAM.TrackMonocular(im, mask, tframe);
 
 #ifdef COMPILEDWITHC11
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();

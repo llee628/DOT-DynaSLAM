@@ -26,17 +26,18 @@ namespace yolov3 {
             int inpWidth = 640;  // Width of network's input image
             int inpHeight = 480; // Height of network's input image
             vector<string> classes;
-            // vector<Point2f> mvpt;
             Net net;
 
         public:
             yolov3Segment();
             ~yolov3Segment();
             cv::Mat Segmentation(cv::Mat &image, cv::Mat &image2);
-            vector<vector<int>> opticalFlowDetect(cv::Mat& img1, cv::Mat& img2);
+
+            // find moving feature points
+            cv::Mat opticalFlowDetect(cv::Mat& img1, cv::Mat& img2);
 
             // Remove the bounding boxes with low confidence using non-maxima suppression
-            cv::Mat postprocess(Mat& frame,Mat& frame2, const vector<Mat>& out);
+            cv::Mat postprocess(Mat& frame, Mat& frame2, const vector<Mat>& out);
             // Get the names of the output layers
             vector<String> getOutputsNames(const Net& net);
 
