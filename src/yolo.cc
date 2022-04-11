@@ -9,9 +9,12 @@
 #include <stdio.h>
 #include <opencv2/opencv.hpp>
 
+
 using namespace cv;
 using namespace dnn;
 using namespace std;
+
+const int DOT_THREAD = 3;
 
 namespace yolov3 {
 
@@ -25,6 +28,7 @@ namespace yolov3 {
         // Give the configuration and weight files for the model
         String modelConfiguration = "src/yolo/yolov4.cfg";
         String modelWeights = "src/yolo/yolov4.weights";
+        
 
         // Load the network
         net = readNetFromDarknet(modelConfiguration, modelWeights);
@@ -117,22 +121,23 @@ namespace yolov3 {
     
                 //  ********************************************
                 // This is the block that cause seg fault
-                // for(int im = 0; i< com_num; im++){
-                //     if ( (DynamicPts.at<int>(0,im) > max(0, box.x)) && ((DynamicPts.at<int>(0,im) < box.x+ box.width)) && (DynamicPts.at<int>(1,im) > max(0, box.y)) && ((DynamicPts.at<int>(1,im)  < box.y+ box.height)) )
-                //     {
-                //         count++;
-                //         cout<<"count = "<<count<<endl;
+                for(int im = 0; im < com_num; im++){
+                    if ( (DynamicPts.at<int>(0,im) >= max(0, box.x)) && ((DynamicPts.at<int>(0,im) < box.x+ box.width)) && (DynamicPts.at<int>(1,im) >= max(0, box.y)) && ((DynamicPts.at<int>(1,im)  < box.y+ box.height)) )
+                    {
+                        count++;
+                        //cout<<"count = "<<count<<endl;
 
-                //         if (count > 0){
-                //             for (int x = max(0, box.x); x < box.x + box.width && x < 640; ++x)
-                //                 for (int y = max(0, box.y); y < box.y + box.height && y < 480; ++y)
-                //                     mask.at<uchar>(y, x) = 1;
-                //         }
-                //     }
-                // } 
+                        // if (count > 0){
+                        //     for (int x = max(0, box.x); x < box.x + box.width && x < 640; ++x)
+                        //         for (int y = max(0, box.y); y < box.y + box.height && y < 480; ++y)
+                        //             mask.at<uchar>(y, x) = 1;
+                        // }
+                    }
+                } 
                 // ************************************************
                 // test version, without threshold setup
-                if(count>0){
+                cout<<"count = "<<count<<endl;
+                if(count>DOT_THREAD){
                     for (int x = max(0, box.x); x < box.x + box.width && x < 640; ++x)
                         for (int y = max(0, box.y); y < box.y + box.height && y < 480; ++y)
                             mask.at<uchar>(y, x) = 1;  
