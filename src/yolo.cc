@@ -24,15 +24,15 @@ yolov3Segment::yolov3Segment() {
     // String modelWeights = "src/yolo/yolov3.weights";
     // String modelConfiguration = "src/yolo/yolov3-tiny.cfg";
     // String modelWeights = "src/yolo/yolov3-tiny.weights";
-    String modelConfiguration = "src/yolo/yolov4.cfg";
-    String modelWeights = "src/yolo/yolov4.weights";
-    // String modelConfiguration = "src/yolo/yolov4-tiny.cfg";
-    // String modelWeights = "src/yolo/yolov4-tiny.weights";
-
+    //String modelConfiguration = "src/yolo/yolov4.cfg";
+    //String modelWeights = "src/yolo/yolov4.weights";
+     String modelConfiguration = "src/yolo/yolov4-tiny.cfg";
+     String modelWeights = "src/yolo/yolov4-tiny.weights";
     // Load the network
+
     net = readNetFromDarknet(modelConfiguration, modelWeights);
     net.setPreferableBackend(DNN_BACKEND_OPENCV);
-    net.setPreferableTarget(DNN_TARGET_CPU);
+    net.setPreferableTarget(DNN_TARGET_OPENCL_FP16);
 }
 
 
