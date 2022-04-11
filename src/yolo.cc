@@ -23,8 +23,8 @@ namespace yolov3 {
         while (getline(ifs, line)) classes.push_back(line);
         
         // Give the configuration and weight files for the model
-        String modelConfiguration = "src/yolo/yolov3.cfg";
-        String modelWeights = "src/yolo/yolov3.weights";
+        String modelConfiguration = "src/yolo/yolov4.cfg";
+        String modelWeights = "src/yolo/yolov4.weights";
 
         // Load the network
         net = readNetFromDarknet(modelConfiguration, modelWeights);
@@ -99,8 +99,8 @@ namespace yolov3 {
         NMSBoxes(boxes, confidences, this->confThreshold, this->nmsThreshold, indices);
 
         // detection Dynamic optical points
-        vector<vector<int>> DynamicPts;
-        DynamicPts = opticalFlowDetect(frame, frame2);
+        cv::Mat DynamicPts;
+       
 
         for (size_t i = 0; i < indices.size(); ++i)
         {
@@ -110,21 +110,33 @@ namespace yolov3 {
             //         box.x + box.width, box.y + box.height, frame);
             string c = this->classes[classIds[idx]];
             if (c == "person") {
+                DynamicPts = opticalFlowDetect(frame, frame2);
+                // detect number of moving objects
                 int count = 0;
-                int com_num = sizeof(DynamicPts[0])/sizeof(DynamicPts[0][0]);
-                for(int im = 0; i< com_num; im++){
-                    if ( (DynamicPts[0][im] > max(0, box.x)) && ((DynamicPts[0][im] < box.x+ box.width)) && (DynamicPts[1][im] > max(0, box.y)) && ((DynamicPts[1][im] < box.y+ box.height)) )
-                    {
-                        count++;
-                        if (count > 6){
-                            for (int x = max(0, box.x); x < box.x + box.width && x < 640; ++x)
-                                for (int y = max(0, box.y); y < box.y + box.height && y < 480; ++y)
-                                    mask.at<uchar>(y, x) = 1;
-                        }
-                    } //else{
-                       // continue;
-                   // }
-                }   
+                int com_num = DynamicPts.cols;
+    
+                //  ********************************************
+                // This is the block that cause seg fault
+                // for(int im = 0; i< com_num; im++){
+                //     if ( (DynamicPts.at<int>(0,im) > max(0, box.x)) && ((DynamicPts.at<int>(0,im) < box.x+ box.width)) && (DynamicPts.at<int>(1,im) > max(0, box.y)) && ((DynamicPts.at<int>(1,im)  < box.y+ box.height)) )
+                //     {
+                //         count++;
+                //         cout<<"count = "<<count<<endl;
+
+                //         if (count > 0){
+                //             for (int x = max(0, box.x); x < box.x + box.width && x < 640; ++x)
+                //                 for (int y = max(0, box.y); y < box.y + box.height && y < 480; ++y)
+                //                     mask.at<uchar>(y, x) = 1;
+                //         }
+                //     }
+                // } 
+                // ************************************************
+                // test version, without threshold setup
+                if(count>0){
+                    for (int x = max(0, box.x); x < box.x + box.width && x < 640; ++x)
+                        for (int y = max(0, box.y); y < box.y + box.height && y < 480; ++y)
+                            mask.at<uchar>(y, x) = 1;  
+                }
             }
         }
 
@@ -150,7 +162,7 @@ namespace yolov3 {
         return names;
     }
 
-    vector<vector<int>> yolov3Segment::opticalFlowDetect(cv::Mat& old_frame, cv::Mat& frame){
+    cv::Mat yolov3Segment::opticalFlowDetect(cv::Mat& old_frame, cv::Mat& frame){
         vector<Point2f> p0, p1;
 
         Mat old_gray, frame_gray;
@@ -174,10 +186,12 @@ namespace yolov3 {
         calcOpticalFlowPyrLK(old_gray, frame_gray, p0, p1, status, err, Size(15,15), 2, criteria);
         
         vector<Point2f> good_new;
-        vector<vector<int>> mvpts; // used to store position of moving features
+        
         int distance[p0.size()];
+        cv::Mat mvpts = cv::Mat_<int>(2,p0.size()); // used to store position of moving features
         for(uint i = 0; i < p0.size(); i++)
         {
+            
             // Select good points
             if(status[i] == 1) {
                 good_new.push_back(p1[i]);
@@ -188,21 +202,14 @@ namespace yolov3 {
                 distance[i] = sqrt( (p0[i].x - p0[i].y) + (p1[i].x - p1[i].y) );
                 // set threshold to 3 (maybe need to tune)
                 if(distance[i] > 3){ // moving
-                    mvpts[0][i] = std::round(p1[i].x);
-                    mvpts[1][i] = std::round(p1[i].y);
+                    mvpts.at<int>(0,i) = std::round(p1[i].x);
+                    mvpts.at<int>(1,i) = std::round(p1[i].y);
                 }else{
-                    mvpts[0][i] = -1;
-                    mvpts[1][i] = -1;
+                    mvpts.at<int>(0,i) = -1;
+                    mvpts.at<int>(1,i) = -1;
                 }
             }
         }
-
-        // Mat img;
-        // add(frame, mask, img);
-
-        // // Now update the previous frame and previous points
-        // old_gray = frame_gray.clone();
-        // p0 = good_new;
 
         return mvpts; 
     }
