@@ -9,12 +9,11 @@
 #include <stdio.h>
 #include <opencv2/opencv.hpp>
 
-
 using namespace cv;
 using namespace dnn;
 using namespace std;
 
-const int DOT_THREAD = 3;
+const int DOT_THREAD = 5;
 
 namespace yolov3 {
 
@@ -28,7 +27,6 @@ namespace yolov3 {
         // Give the configuration and weight files for the model
         String modelConfiguration = "src/yolo/yolov4.cfg";
         String modelWeights = "src/yolo/yolov4.weights";
-        
 
         // Load the network
         net = readNetFromDarknet(modelConfiguration, modelWeights);
@@ -60,7 +58,8 @@ namespace yolov3 {
     }
 
 
-    // Remove the bounding boxes with low confidence using non-maxima suppression
+    // Remove the bounding boxes with low confidence using non-maxima suppression  
+                        //                   prev         cur
     cv::Mat yolov3Segment::postprocess(Mat& frame, Mat& frame2, const vector<Mat>& outs)
     {
         vector<int> classIds;
@@ -82,10 +81,10 @@ namespace yolov3 {
                 minMaxLoc(scores, 0, &confidence, 0, &classIdPoint);
                 if (confidence > this->confThreshold)
                 {
-                    int centerX = (int)(data[0] * frame.cols);
-                    int centerY = (int)(data[1] * frame.rows);
-                    int width = (int)(data[2] * frame.cols);
-                    int height = (int)(data[3] * frame.rows);
+                    int centerX = (int)(data[0] * frame2.cols);
+                    int centerY = (int)(data[1] * frame2.rows);
+                    int width = (int)(data[2] * frame2.cols);
+                    int height = (int)(data[3] * frame2.rows);
                     int left = centerX - width / 2;
                     int top = centerY - height / 2;
                     
@@ -104,7 +103,11 @@ namespace yolov3 {
 
         // detection Dynamic optical points
         cv::Mat DynamicPts;
-       
+        DynamicPts = opticalFlowDetect(frame, frame2);
+
+        // detect number of moving objects
+        int count = 0;
+        int com_num = DynamicPts.cols;
 
         for (size_t i = 0; i < indices.size(); ++i)
         {
@@ -114,34 +117,20 @@ namespace yolov3 {
             //         box.x + box.width, box.y + box.height, frame);
             string c = this->classes[classIds[idx]];
             if (c == "person") {
-                DynamicPts = opticalFlowDetect(frame, frame2);
-                // detect number of moving objects
-                int count = 0;
-                int com_num = DynamicPts.cols;
-    
-                //  ********************************************
-                // This is the block that cause seg fault
                 for(int im = 0; im < com_num; im++){
-                    if ( (DynamicPts.at<int>(0,im) >= max(0, box.x)) && ((DynamicPts.at<int>(0,im) < box.x+ box.width)) && (DynamicPts.at<int>(1,im) >= max(0, box.y)) && ((DynamicPts.at<int>(1,im)  < box.y+ box.height)) )
+                    if ( (DynamicPts.at<int>(0,im) > max(0, box.x)) && ((DynamicPts.at<int>(0,im) < box.x+ box.width)) && (DynamicPts.at<int>(1,im) > max(0, box.y)) && ((DynamicPts.at<int>(1,im)  < box.y+ box.height)) )
                     {
                         count++;
-                        //cout<<"count = "<<count<<endl;
+                        // cout<<"DynamicPts = "<<count<<endl;
 
-                        // if (count > 0){
-                        //     for (int x = max(0, box.x); x < box.x + box.width && x < 640; ++x)
-                        //         for (int y = max(0, box.y); y < box.y + box.height && y < 480; ++y)
-                        //             mask.at<uchar>(y, x) = 1;
-                        // }
+                        if (count > DOT_THREAD){
+                            for (int x = max(0, box.x + box.width / 4); x < box.x + 3*box.width/4 && x < 640; ++x)
+                                for (int y = max(0, box.y); y < box.y + box.height && y < 480; ++y)
+                                    mask.at<uchar>(y, x) = 1;
+                        }
                     }
                 } 
-                // ************************************************
-                // test version, without threshold setup
-                cout<<"count = "<<count<<endl;
-                if(count>DOT_THREAD){
-                    for (int x = max(0, box.x); x < box.x + box.width && x < 640; ++x)
-                        for (int y = max(0, box.y); y < box.y + box.height && y < 480; ++y)
-                            mask.at<uchar>(y, x) = 1;  
-                }
+                
             }
         }
 
@@ -183,7 +172,7 @@ namespace yolov3 {
         TermCriteria criteria = TermCriteria((TermCriteria::COUNT) + (TermCriteria::EPS), 10, 0.03);
         if(p0.size() < 30 || true)
         {   
-            cout << "FEW POINTS\n";
+            // cout << "FEW POINTS\n";
             goodFeaturesToTrack(old_gray, p0, 0, 0.3, 7, Mat(), 7, false, 0.04);
 
         }
@@ -196,7 +185,7 @@ namespace yolov3 {
         cv::Mat mvpts = cv::Mat_<int>(2,p0.size()); // used to store position of moving features
         for(uint i = 0; i < p0.size(); i++)
         {
-            
+
             // Select good points
             if(status[i] == 1) {
                 good_new.push_back(p1[i]);
@@ -204,9 +193,11 @@ namespace yolov3 {
                 // line(mask,p1[i], p0[i], colors[i], 2);
                 // circle(frame, p1[i], 5, colors[i], -1);
 
-                distance[i] = sqrt( (p0[i].x - p0[i].y) + (p1[i].x - p1[i].y) );
+                // distance[i] = sqrt( (p0[i].x - p1[i].x) + (p0[i].y - p1[i].y) );
+                distance[i] = sqrt( pow(p0[i].x - p1[i].x,2) + pow(p0[i].y - p1[i].y,2) );
                 // set threshold to 3 (maybe need to tune)
                 if(distance[i] > 3){ // moving
+                    // cout<<"distance = "<<distance[i] <<endl;
                     mvpts.at<int>(0,i) = std::round(p1[i].x);
                     mvpts.at<int>(1,i) = std::round(p1[i].y);
                 }else{
