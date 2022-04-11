@@ -17,7 +17,7 @@
 
 #include "Geometry.h"
 #include "MaskNet.h"
-#include<System.h>
+#include <System.h>
 #include "yolo.h"
 
 using namespace std;
@@ -106,9 +106,12 @@ int main(int argc, char **argv)
             mask = mask - maskRCNNdil;
         }
         */
+
+        // segment out images using YOLO
         cv::Mat mask = cv::Mat::ones(480,640,CV_8U);
         if (argc == 5)
-            mask = yolo->Segmentation(im, im2);
+            // im is current frame, im2 is previous frame
+            mask = yolo->Segmentation(im2, im);
         // Pass the image to the SLAM system
         SLAM.TrackMonocular(im, mask, tframe);
 
