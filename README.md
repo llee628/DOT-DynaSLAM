@@ -1,6 +1,4 @@
-# DynaSLAM
-
-[[Project]](https://bertabescos.github.io/DynaSLAM/)   [[arXiv]](https://arxiv.org/abs/1806.05620)   [[Journal]](https://ieeexplore.ieee.org/document/8421015)
+# Modified-DynaSLAM-With-YOLO-DOT
 
 DynaSLAM is a visual SLAM system that is robust in dynamic scenarios for monocular, stereo and RGB-D configurations. Having a static map of the scene allows inpainting the frame background that has been occluded by such dynamic objects.
 
@@ -10,27 +8,28 @@ DynaSLAM: Tracking, Mapping and Inpainting in Dynamic Scenes
 [Berta Bescos](http://bertabescos.github.io), [José M. Fácil](http://webdiis.unizar.es/~jmfacil/), [Javier Civera](http://webdiis.unizar.es/~jcivera/) and [José Neira](http://webdiis.unizar.es/~jneira/)   
 RA-L and IROS, 2018
 
-We provide examples to run the SLAM system in the [TUM dataset](http://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets) as RGB-D or monocular, and in the [KITTI dataset](http://www.cvlibs.net/datasets/kitti/eval_odometry.php) as stereo or monocular.
+Based on the work of DynaSLAM, we change the moving object detector with YOLOv4 and use our dynamic object tracking (algorithm) to get and even faster and more accurate results.
 
-## News
-- DynaSLAM supports now both OpenCV 2.X and OpenCV 3.X.
+We provide examples to run the SLAM system in the [TUM dataset](http://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets) as monocular.
+
+## Prerequisites
+- We have tested the system in **Ubuntu 18.04** and **20.04**
+- gcc >= 7.4.0
+- OpenCV >= 3.4.5
+- Install ORB-SLAM2 prerequisites: C++11 or C++0x Compiler, Pangolin, OpenCV and Eigen3  (https://github.com/raulmur/ORB_SLAM2)
+- Install boost libraries with the command `sudo apt-get install libboost-all-dev`.
+- Install python 2.7, keras and tensorflow
 
 ## Getting Started
-- Install ORB-SLAM2 prerequisites: C++11 or C++0x Compiler, Pangolin, OpenCV and Eigen3  (https://github.com/raulmur/ORB_SLAM2).
-- Install boost libraries with the command `sudo apt-get install libboost-all-dev`.
-- Install python 2.7, keras and tensorflow, and download the `mask_rcnn_coco.h5` model from this GitHub repository: https://github.com/matterport/Mask_RCNN/releases. 
 - Clone this repo:
 ```bash
-git clone https://github.com/BertaBescos/DynaSLAM.git
-cd DynaSLAM
+git clone https://github.com/llee628/Modified-DynaSLAM-With-YOLO-DOT.git
 ```
 ```
-cd DynaSLAM
+cd Modified-DynaSLAM-With-YOLO-DOT
 chmod +x build.sh
 ./build.sh
 ```
-- Place the `mask_rcnn_coco.h5` model in the folder `DynaSLAM/src/python/`.
-
 ## RGB-D Example on TUM Dataset
 - Download a sequence from http://vision.in.tum.de/data/datasets/rgbd-dataset/download and uncompress it.
 
@@ -77,19 +76,7 @@ If `PATH_TO_OUTPUT` is provided, the inpainted frames are computed and saved in 
 ./Examples/Monocular/mono_kitti Vocabulary/ORBvoc.txt Examples/Monocular/KITTIX.yaml PATH_TO_DATASET_FOLDER/dataset/sequences/SEQUENCE_NUMBER (PATH_TO_MASKS)
 ```
 
-
-## Citation
-
-If you use DynaSLAM in an academic work, please cite:
-
-    @article{bescos2018dynaslam,
-      title={{DynaSLAM}: Tracking, Mapping and Inpainting in Dynamic Environments},
-      author={Bescos, Berta, F\'acil, JM., Civera, Javier and Neira, Jos\'e},
-      journal={IEEE RA-L},
-      year={2018}
-     }
-
 ## Acknowledgements
-Our code builds on [ORB-SLAM2](https://github.com/raulmur/ORB_SLAM2).
+Our code builds on [ORB-SLAM2](https://github.com/raulmur/ORB_SLAM2) and [DynaSLAM](https://github.com/BertaBescos/DynaSLAM).
 
 # DynaSLAM
