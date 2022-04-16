@@ -5,6 +5,10 @@ lib/
 
 build/
 
+data/
+
+*.weights
+
 Examples/Monocular/mono_tum
 Examples/Monocular/mono_tum_yolo
 Examples/Monocular/mono_kitti
