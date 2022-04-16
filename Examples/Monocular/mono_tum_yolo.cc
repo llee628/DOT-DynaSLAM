@@ -17,7 +17,7 @@
 
 #include "Geometry.h"
 #include "MaskNet.h"
-#include<System.h>
+#include <System.h>
 #include "yolo.h"
 
 using namespace std;
@@ -49,9 +49,9 @@ int main(int argc, char **argv)
         //cout << "Loading Mask R-CNN. This could take a while..." << endl;
         //MaskNet = new DynaSLAM::SegmentDynObject();
         //cout << "Mask R-CNN loaded!" << endl;
-        cout << "Loading Yolov3 net. This could take a while..." << endl;
+        cout << "Loading Yolov4 net. This could take a while..." << endl;
         yolo = new yolov3::yolov3Segment();
-        cout << "Yolov3 net loaded!" << endl;
+        cout << "Yolov4 net loaded!" << endl;
     }
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
@@ -66,7 +66,7 @@ int main(int argc, char **argv)
     cout << "Images in the sequence: " << nImages << endl << endl;
 
     // Main loop
-    cv::Mat im;
+    cv::Mat im, im2;
 
     // Dilation settings
     int dilation_size = 15;
@@ -74,10 +74,11 @@ int main(int argc, char **argv)
                                         cv::Size( 2*dilation_size + 1, 2*dilation_size+1 ),
                                         cv::Point( dilation_size, dilation_size ) );
 
-    for(int ni=0; ni<nImages; ni++)
+    for(int ni=1; ni<nImages; ni++)
     {
         // Read image from file
         im = cv::imread(string(argv[3])+"/"+vstrImageFilenames[ni],CV_LOAD_IMAGE_UNCHANGED);
+        im2 = cv::imread(string(argv[3])+"/"+vstrImageFilenames[ni-1],CV_LOAD_IMAGE_UNCHANGED);
         double tframe = vTimestamps[ni];
 
         if(im.empty())
@@ -105,9 +106,12 @@ int main(int argc, char **argv)
             mask = mask - maskRCNNdil;
         }
         */
+
+        // segment out images using YOLO
         cv::Mat mask = cv::Mat::ones(480,640,CV_8U);
         if (argc == 5)
-            mask = yolo->Segmentation(im);
+            // im is current frame, im2 is previous frame
+            mask = yolo->Segmentation(im2, im);
         // Pass the image to the SLAM system
         SLAM.TrackMonocular(im, mask, tframe);
 
