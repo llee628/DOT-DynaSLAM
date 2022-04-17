@@ -13,7 +13,7 @@ using namespace cv;
 using namespace dnn;
 using namespace std;
 
-const int DOT_THREAD = 5;
+const int DOT_THREAD = 4;
 
 namespace yolov3 {
 
@@ -106,7 +106,7 @@ namespace yolov3 {
         DynamicPts = opticalFlowDetect(frame, frame2);
 
         // detect number of moving objects
-        int count = 0;
+        int count;
         int com_num = DynamicPts.cols;
 
         for (size_t i = 0; i < indices.size(); ++i)
@@ -117,20 +117,19 @@ namespace yolov3 {
             //         box.x + box.width, box.y + box.height, frame);
             string c = this->classes[classIds[idx]];
             if (c == "person") {
-                for(int im = 0; im < com_num; im++){
+                count = 0;
+                for(int im = 0; im < com_num; ++im){
                     if ( (DynamicPts.at<int>(0,im) > max(0, box.x)) && ((DynamicPts.at<int>(0,im) < box.x+ box.width)) && (DynamicPts.at<int>(1,im) > max(0, box.y)) && ((DynamicPts.at<int>(1,im)  < box.y+ box.height)) )
                     {
                         count++;
-                        // cout<<"DynamicPts = "<<count<<endl;
-
-                        if (count > DOT_THREAD){
-                            for (int x = max(0, box.x + box.width / 4); x < box.x + 3*box.width/4 && x < 640; ++x)
-                                for (int y = max(0, box.y); y < box.y + box.height && y < 480; ++y)
-                                    mask.at<uchar>(y, x) = 1;
-                        }
+                        cout<<"DynamicPts = "<<count<<endl;
                     }
                 } 
-                
+                if (count > DOT_THREAD){
+                    int lengthY = min(480, box.y + box.height ) - max(0, box.y);
+                    int lengthX = min(640, box.x + box.width ) - max(0, box.x);
+                    mask(Range(max(0, box.y), max(0, box.y) + lengthY), Range(max(0, box.x), max(0, box.x) + lengthX)) = 1;
+                }
             }
         }
 
@@ -181,7 +180,7 @@ namespace yolov3 {
         
         vector<Point2f> good_new;
         
-        int distance[p0.size()];
+        int distance;
         cv::Mat mvpts = cv::Mat_<int>(2,p0.size()); // used to store position of moving features
         for(uint i = 0; i < p0.size(); i++)
         {
@@ -189,14 +188,11 @@ namespace yolov3 {
             // Select good points
             if(status[i] == 1) {
                 good_new.push_back(p1[i]);
-                // draw the tracks
-                // line(mask,p1[i], p0[i], colors[i], 2);
-                // circle(frame, p1[i], 5, colors[i], -1);
 
                 // distance[i] = sqrt( (p0[i].x - p1[i].x) + (p0[i].y - p1[i].y) );
-                distance[i] = sqrt( pow(p0[i].x - p1[i].x,2) + pow(p0[i].y - p1[i].y,2) );
+                distance = sqrt( pow(p0[i].x - p1[i].x,2) + pow(p0[i].y - p1[i].y,2) );
                 // set threshold to 3 (maybe need to tune)
-                if(distance[i] > 3){ // moving
+                if(distance > 3){ // moving
                     // cout<<"distance = "<<distance[i] <<endl;
                     mvpts.at<int>(0,i) = std::round(p1[i].x);
                     mvpts.at<int>(1,i) = std::round(p1[i].y);
