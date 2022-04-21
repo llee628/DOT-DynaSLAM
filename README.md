@@ -23,10 +23,10 @@ We provide examples to run the SLAM system in the [TUM dataset](http://projects.
 ## Getting Started
 - Clone this repo:
 ```bash
-git clone https://github.com/llee628/Modified-DynaSLAM-With-YOLO-DOT.git
+git clone https://github.com/llee628/DOT-DynaSLAM.git
 ```
 ```
-cd Modified-DynaSLAM-With-YOLO-DOT
+cd DOT-DynaSLAM
 chmod +x build.sh
 ./build.sh
 ```
