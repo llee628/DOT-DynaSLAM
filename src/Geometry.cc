@@ -105,7 +105,7 @@ vector<Geometry::DynKeyPoint> Geometry::ExtractDynPoints(const vector<ORB_SLAM2:
     K.at<float>(0,2) = currentFrame.cx;
     K.at<float>(1,2) = currentFrame.cy;
 
-    cv::Mat vAllMPw;
+    cv::Mat vAllMPw;         
     cv::Mat vAllMatRefFrame;
     cv::Mat vAllLabels;
     cv::Mat vAllDepthRefFrame;
@@ -125,6 +125,7 @@ vector<Geometry::DynKeyPoint> Geometry::ExtractDynPoints(const vector<ORB_SLAM2:
             const float &v = kp.pt.y;
             const float &u = kp.pt.x;
             const float d = refFrame.mImDepth.at<float>(v,u);
+
             if (d > 0 && d < 6){
                 matRefFrame.at<float>(k,0) = refFrame.mvKeysUn[j].pt.x;
                 matRefFrame.at<float>(k,1) = refFrame.mvKeysUn[j].pt.y;
@@ -136,30 +137,36 @@ vector<Geometry::DynKeyPoint> Geometry::ExtractDynPoints(const vector<ORB_SLAM2:
             }
         }
 
+        if(k==0){
+            continue;  //check 0
+        }
+
         matRefFrame = matRefFrame.rowRange(0,k);
         matInvDepthRefFrame = matInvDepthRefFrame.rowRange(0,k);
         matDepthRefFrame = matDepthRefFrame.rowRange(0,k);
-        vLabels = vLabels.rowRange(0,k);
+        vLabels = vLabels.rowRange(0,k); 
         cv::Mat vMPRefFrame = K.inv()*matRefFrame.t();
+        cout <<"vMPRefFrame size " <<vMPRefFrame.size() <<endl;
         cv::vconcat(vMPRefFrame,matInvDepthRefFrame.t(),vMPRefFrame);
-        cv::Mat vMPw = refFrame.mTcw.inv() * vMPRefFrame;
+        cv::Mat vMPw = refFrame.mTcw.inv() * vMPRefFrame; 
         cv::Mat _vMPw = cv::Mat(4,vMPw.cols,CV_32F);
         cv::Mat _vLabels = cv::Mat(vLabels.rows,1,CV_32F);
         cv::Mat _matRefFrame = cv::Mat(matRefFrame.rows,3,CV_32F);
         cv::Mat _matDepthRefFrame = cv::Mat(matDepthRefFrame.rows,1,CV_32F);
 
         int h(0);
-        mParallaxThreshold = 30;
+        mParallaxThreshold = 30; 
         for (int j(0); j < k; j++)
         {
             cv::Mat mp = cv::Mat(3,1,CV_32F);
             mp.at<float>(0,0) = vMPw.at<float>(0,j)/matInvDepthRefFrame.at<float>(0,j);
             mp.at<float>(1,0) = vMPw.at<float>(1,j)/matInvDepthRefFrame.at<float>(0,j);
             mp.at<float>(2,0) = vMPw.at<float>(2,j)/matInvDepthRefFrame.at<float>(0,j);
-            cv::Mat tRefFrame = refFrame.mTcw.rowRange(0,3).col(3);
-
-            cv::Mat tCurrentFrame = currentFrame.mTcw.rowRange(0,3).col(3);
+            cv::Mat tRefFrame = refFrame.mTcw.rowRange(0,3).col(3); 
+            cv::Mat tCurrentFrame = currentFrame.mTcw.rowRange(0,3).col(3); 
+            //X-KF
             cv::Mat nMPRefFrame = mp - tRefFrame;
+            //X-CF
             cv::Mat nMPCurrentFrame = mp - tCurrentFrame;
 
             double dotProduct = nMPRefFrame.dot(nMPCurrentFrame);
@@ -168,17 +175,21 @@ vector<Geometry::DynKeyPoint> Geometry::ExtractDynPoints(const vector<ORB_SLAM2:
             double angle = acos(dotProduct/(normMPRefFrame*normMPCurrentFrame))*180/M_PI;
             if (angle < mParallaxThreshold)
             {
-                _vMPw.at<float>(0,h) = vMPw.at<float>(0,j);
-                _vMPw.at<float>(1,h) = vMPw.at<float>(1,j);
-                _vMPw.at<float>(2,h) = vMPw.at<float>(2,j);
-                _vMPw.at<float>(3,h) = vMPw.at<float>(3,j);
+                _vMPw.at<float>(0,h) = vMPw.at<float>(0,j);  //X
+                _vMPw.at<float>(1,h) = vMPw.at<float>(1,j);  //Y
+                _vMPw.at<float>(2,h) = vMPw.at<float>(2,j);  //Z
+                _vMPw.at<float>(3,h) = vMPw.at<float>(3,j);  // 1/Z
                 _vLabels.at<float>(h,0) = vLabels.at<float>(j,0);
-                _matRefFrame.at<float>(h,0) = matRefFrame.at<float>(j,0);
-                _matRefFrame.at<float>(h,1) = matRefFrame.at<float>(j,1);
-                _matRefFrame.at<float>(h,2) = matRefFrame.at<float>(j,2);
+                _matRefFrame.at<float>(h,0) = matRefFrame.at<float>(j,0);  //u
+                _matRefFrame.at<float>(h,1) = matRefFrame.at<float>(j,1);  //v
+                _matRefFrame.at<float>(h,2) = matRefFrame.at<float>(j,2);  //1
                 _matDepthRefFrame.at<float>(h,0) = matDepthRefFrame.at<float>(j,0);
-                h++;
+                h++;  
             }
+        }
+
+        if(h==0){
+            continue;   // check 0 mat
         }
 
         vMPw = _vMPw.colRange(0,h);
@@ -227,20 +238,21 @@ vector<Geometry::DynKeyPoint> Geometry::ExtractDynPoints(const vector<ORB_SLAM2:
         cv::Mat __vAllDepthRefFrame = cv::Mat(vAllDepthRefFrame.size(),CV_32F);
         int h(0);
         cv::Mat __matProjDepth = cv::Mat(matProjDepth.size(),CV_32F);
+
         for (int i(0); i < matProjDepth.cols; i++)
         {
             if (matProjDepth.at<float>(0,i) < 7)
             {
                 __matProjDepth.at<float>(0,h) = matProjDepth.at<float>(0,i);
 
-                _vMPCurrentFrame.at<float>(0,h) = vMPCurrentFrame.at<float>(0,i);
-                _vMPCurrentFrame.at<float>(1,h) = vMPCurrentFrame.at<float>(1,i);
-                _vMPCurrentFrame.at<float>(2,h) = vMPCurrentFrame.at<float>(2,i);
-                _vMPCurrentFrame.at<float>(3,h) = vMPCurrentFrame.at<float>(3,i);
+                _vMPCurrentFrame.at<float>(0,h) = vMPCurrentFrame.at<float>(0,i);  //X
+                _vMPCurrentFrame.at<float>(1,h) = vMPCurrentFrame.at<float>(1,i);  //Y
+                _vMPCurrentFrame.at<float>(2,h) = vMPCurrentFrame.at<float>(2,i);  //Z
+                _vMPCurrentFrame.at<float>(3,h) = vMPCurrentFrame.at<float>(3,i);  //1
 
-                _vAllMatRefFrame.at<float>(h,0) = vAllMatRefFrame.at<float>(i,0);
-                _vAllMatRefFrame.at<float>(h,1) = vAllMatRefFrame.at<float>(i,1);
-                _vAllMatRefFrame.at<float>(h,2) = vAllMatRefFrame.at<float>(i,2);
+                _vAllMatRefFrame.at<float>(h,0) = vAllMatRefFrame.at<float>(i,0);  //u
+                _vAllMatRefFrame.at<float>(h,1) = vAllMatRefFrame.at<float>(i,1);  //v
+                _vAllMatRefFrame.at<float>(h,2) = vAllMatRefFrame.at<float>(i,2);  //1
 
                 _vLabels.at<float>(h,0) = vLabels.at<float>(i,0);
 
@@ -251,7 +263,7 @@ vector<Geometry::DynKeyPoint> Geometry::ExtractDynPoints(const vector<ORB_SLAM2:
         }
 
         matProjDepth = __matProjDepth.colRange(0,h);
-        vMPCurrentFrame = _vMPCurrentFrame.colRange(0,h);
+        vMPCurrentFrame = _vMPCurrentFrame.colRange(0,h); 
         vAllMatRefFrame = _vAllMatRefFrame.rowRange(0,h);
         vLabels = _vLabels.rowRange(0,h);
         vAllDepthRefFrame = __vAllDepthRefFrame.rowRange(0,h);
@@ -280,8 +292,7 @@ vector<Geometry::DynKeyPoint> Geometry::ExtractDynPoints(const vector<ORB_SLAM2:
                     mat2CurrentFrame.at<float>(j,1) = y;
                     v2AllMatRefFrame.at<float>(j,0) = vAllMatRefFrame.at<float>(i,0);
                     v2AllMatRefFrame.at<float>(j,1) = vAllMatRefFrame.at<float>(i,1);
-                    v2AllMatRefFrame.at<float>(j,2) = vAllMatRefFrame.at<float>(i,2);
-                    _vAllDepthRefFrame.at<float>(j,0) = vAllDepthRefFrame.at<float>(i,0);
+                    v2AllMatRefFrame.at<float>(j,2) = vAllMatRefFrame.at<float>(i,2);  // =1
                     float d1 = matProjDepth.at<float>(0,i);
                     mat2ProjDepth.at<float>(j,0) = d1;
                     v2Labels.at<float>(j,0) = vLabels.at<float>(i,0);
@@ -319,14 +330,15 @@ vector<Geometry::DynKeyPoint> Geometry::ExtractDynPoints(const vector<ORB_SLAM2:
             {
                 int x = (int)matCurrentFrame.at<float>(i,0) + (int)u1.at<float>(j,0);
                 int y = (int)matCurrentFrame.at<float>(i,1) + (int)u1.at<float>(j,1);
-                float _d = currentFrame.mImDepth.at<float>(y,x);
+                float _d = currentFrame.mImDepth.at<float>(y,x); 
                 if ((_d > 0) && (_d < matProjDepth.at<float>(i,0)))
                 {
                     _matDepth.at<float>(s,0) = _d;
                     _matDiffDepth.at<float>(s,0) = matProjDepth.at<float>(i,0) - _d;
-                    s++;
+                    s++; 
                 }
             }
+
             if (s > 0)
             {
                 _matDepth = _matDepth.rowRange(0,s);
@@ -336,7 +348,7 @@ vector<Geometry::DynKeyPoint> Geometry::ExtractDynPoints(const vector<ORB_SLAM2:
                 cv::minMaxLoc(_matDiffDepth,&minVal,&maxVal,&minIdx,&maxIdx);
                 int xIndex = minIdx.x;
                 int yIndex = minIdx.y;
-                matDepthCurrentFrame.at<float>(_s,0) = _matDepth.at<float>(yIndex,0);
+                matDepthCurrentFrame.at<float>(_s,0) = _matDepth.at<float>(yIndex,0); 
                 _matProjDepth.at<float>(_s,0) = matProjDepth.at<float>(i,0);
                 _matCurrentFrame.at<float>(_s,0) = matCurrentFrame.at<float>(i,0);
                 _matCurrentFrame.at<float>(_s,1) = matCurrentFrame.at<float>(i,1);
@@ -350,10 +362,10 @@ vector<Geometry::DynKeyPoint> Geometry::ExtractDynPoints(const vector<ORB_SLAM2:
 
         mDepthThreshold = 0.6;
 
+
         cv::Mat matDepthDifference = matProjDepth - matDepthCurrentFrame;
 
-        mVarThreshold = 0.001; //0.040;
-
+        mVarThreshold = 0.001; 
         vector<Geometry::DynKeyPoint> vDynPoints;
 
         for (int i(0); i < matCurrentFrame.rows; i++)
@@ -388,6 +400,7 @@ vector<Geometry::DynKeyPoint> Geometry::ExtractDynPoints(const vector<ORB_SLAM2:
         return vDynPoints;
     }
 }
+
 
 
 cv::Mat Geometry::DepthRegionGrowing(const vector<DynKeyPoint> &vDynPoints,const cv::Mat &imDepth){
