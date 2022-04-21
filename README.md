@@ -31,6 +31,7 @@ chmod +x build.sh
 ./build.sh
 ```
 - Download the 'yolov4.cfg' and 'yolov4.weights' from https://github.com/AlexeyAB/darknet#pre-trained-models and place them in the folder 'DOT-DynaSLAM/src/yolo'
+- The estimated keyframe trajectory is saved in /DOT-DynaSLAM under the name KeyFrameTrajectory.txt.
 
 ## RGB-D Example on TUM Dataset
 - Download a sequence from http://vision.in.tum.de/data/datasets/rgbd-dataset/download and uncompress it.
@@ -50,7 +51,8 @@ These associations files are given in the folder `./Examples/RGB-D/associations/
   
 If `PATH_TO_YOLO` is **not** provided, only the geometrical approach is used to detect dynamic objects.
 
-If `PATH_TO_YOLO` is provided, YOLOv4 is used to segment the dynamic content of every frame. These masks are saved in the provided folder `PATH_TO_YOLO`. 
+If `PATH_TO_YOLO` is provided, YOLOv4 is used to segment the dynamic content of every frame.
+
 
 ## Monocular Example on TUM Dataset
 - Download a sequence from http://vision.in.tum.de/data/datasets/rgbd-dataset/download and uncompress it to the data/.
@@ -61,7 +63,7 @@ If `PATH_TO_YOLO` is provided, YOLOv4 is used to segment the dynamic content of 
 ```
 If `PATH_TO_YOLO` is **not** provided, only the geometrical approach is used to detect dynamic objects.
 
-If `PATH_TO_YOLO` is provided, YOLOv4 is used to segment the dynamic content of every frame. These masks are saved in the provided folder `PATH_TO_YOLO`. 
+If `PATH_TO_YOLO` is provided, YOLOv4 is used to segment the dynamic content of every frame. 
 
 ## Acknowledgements
 Our code builds on [ORB-SLAM2](https://github.com/raulmur/ORB_SLAM2) and [DynaSLAM](https://github.com/BertaBescos/DynaSLAM).
